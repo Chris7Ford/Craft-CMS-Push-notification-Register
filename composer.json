@@ -1,0 +1,44 @@
+{
+    "name": "pageworks/push-notifications-register",
+    "description": "A plugin created to store web push notification urls for craft users",
+    "type": "craft-plugin",
+    "version": "1.0.0",
+    "keywords": [
+        "craft",
+        "cms",
+        "craftcms",
+        "craft-plugin",
+        "push notifications register"
+    ],
+    "support": {
+        "docs": "???",
+        "issues": "???"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Pageworks",
+            "homepage": "https://www.page.works/"
+        }
+    ],
+    "require": {
+        "craftcms/cms": "^3.0.0"
+    },
+    "autoload": {
+        "psr-4": {
+          "pageworks\\pushnotificationsregister\\": "src/"
+        }
+    },
+    "extra": {
+        "name": "Push Notifications Register",
+        "handle": "push-notifications-register",
+        "developer": "Pageworks",
+        "developerUrl": "https://www.page.works/",
+        "documentationUrl": "???",
+        "changelogUrl": "???",
+        "components": {
+            "pushNotificationService": "pageworks\\pushnotificationsregister\\services\\PushNotificationService"
+        },
+        "class": "pageworks\\pushnotificationsregister\\PushNotificationsRegister"
+    }
+}
