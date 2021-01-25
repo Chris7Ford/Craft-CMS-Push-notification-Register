@@ -15,7 +15,10 @@ use pageworks\pushnotificationsregister\services\PushNotificationService as Push
 use Craft;
 use craft\base\Plugin;
 use craft\services\Plugins;
+use craft\web\UrlManager;
 use craft\events\PluginEvent;
+use craft\events\RegisterUrlRulesEvent;
+use pageworks\pushnotificationsregister\controllers\PushNotificationsController;
 
 use yii\base\Event;
 
@@ -77,7 +80,7 @@ class PushNotificationsRegister extends Plugin
         );
 
         Event::on(UrlManager::class, UrlManager::EVENT_REGISTER_SITE_URL_RULES, function (RegisterUrlRulesEvent $event) {
-          $event->rules["/pushNotifications/register-push-notification"] = "pageworks-module/default/register-push-notification-data";
+          $event->rules["/pushNotifications/register-push-notification"] = "push-notifications-register/push-notifications/register-push-notification-data";
         });
 
         Craft::info(

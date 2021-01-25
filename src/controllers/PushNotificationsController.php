@@ -8,7 +8,7 @@
  * @copyright Copyright (c) 2020 Pageworks
  */
 
-namespace pageworks\pushnotificationsregister;
+namespace pageworks\pushnotificationsregister\controllers;
 
 use Craft;
 use craft\web\Controller;
@@ -52,7 +52,7 @@ class PushNotificationsController extends Controller
         "key" => $params["key"],
         "token" => $params["token"],
         "userId" => $params["userId"],
-      )
+      );
       $currentUser = Craft::$app->getUser()->getIdentity();
       if ($params["userId"] === $currentUser->id) {
         $service = new PushNotificationServiceService();
