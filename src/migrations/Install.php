@@ -13,15 +13,19 @@ class Install extends Migration
         if (!$this->db->tableExists('{{%pushNotifications}}')) {
           // create the push notifications table
           $this->createTable('{{%pushNotifications}}', [
-              "id" => $this->integer()->notNull(),
+              "id" => $this->primaryKey(),
               "endpoint" => $this->string()->notNull(),
               "key" => $this->string()->notNull(),
               "token" => $this->string()->notNull(),
               "userId" => $this->integer()->notNull(),
               "dateCreated" => $this->dateTime(),
               "dateUpdated" => $this->dateTime(),
+              "lastSuccess" => $this->dateTime(),
+              "lastAttempt" => $this->dateTime(),
+              "failureMessage" => $this->string(750),
               "uid" => $this->string(),
           ]);
+          $this->createIndex("endpoint", '{{%pushNotifications}}', "endpoint", true);
         }
       }
     }

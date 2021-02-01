@@ -15,6 +15,8 @@ use craft\elements\db\ElementQuery;
 
 use Craft;
 use craft\base\Component;
+use craft\db\mysql\QueryBuilder;
+use Minishlink\WebPush\WebPush;
 
 /**
  * @author    Pageworks
@@ -23,18 +25,18 @@ use craft\base\Component;
  */
 class PushNotificationService extends Component
 {
+
+    private $pluginTableName;
+
+    function __construct() {
+      $this->pluginTableName = getenv("DB_TABLE_PREFIX") . "pushNotifications";
+    }
     // Public Methods
     // =========================================================================
 
     /*
      * @return mixed
      */
-    public function exampleService()
-    {
-        $result = 'something';
-
-        return $result;
-    }
 
     public function getFieldFullName($fieldName)
     {
@@ -50,29 +52,92 @@ class PushNotificationService extends Component
       return $ret;
     }
 
-    public function getPushNotifications($userConditions)
+    public function getPushNotificationsByUserConditions($userConditions = array())
     {
       $query = new Craft\db\Query();
       $result = array();
-      if (count($userConditions === 0) {
+      if (count($userConditions) === 0) {
         $result = $query->select(["endpoint", "key", "token", "userId", "uid", "id"])
-          ->from("pushNotifications")
+          ->from($this->pluginTableName)
           ->all();
       } else {
         $fields = array();
         foreach ($userConditions as $conditionKey => $conditionValue) {
           $fieldName = $this->getFieldFullName($conditionKey);
           if ($fieldName !== "") {
-            $fields[$fieldName] = $conditionValue;
+            $fields["content." . $fieldName] = $conditionValue;
           }
         }
-        $result = $query->select(["pushNotifications.endpoint", "pushNotifications.key", "pushNotifications.token", "pushNotifications.userId", "pushNotifications.uid", "pushNotifications.id"])
-          ->from("pushNotifications")
-          ->join("INNER JOIN", "content", "content.elementId = pushNotifications.userId")
+        $result = $query->select([$this->pluginTableName . ".endpoint", $this->pluginTableName . ".key", $this->pluginTableName . ".token", $this->pluginTableName . ".userId", $this->pluginTableName . ".uid", $this->pluginTableName . ".id"])
+          ->from($this->pluginTableName)
+          ->join("INNER JOIN", "content", "content.elementId = " . $this->pluginTableName . ".userId")
           ->where($fields)
           ->all();
       }
       return $result;
+    }
+
+    public function getPushNotificationsByUserId(array $userIds)
+    {
+      $query = new Craft\db\Query();
+      $result = $query->select(["endpoint", "key", "token", "userId", "uid", "id"])
+        ->from($this->pluginTableName)
+        ->where(array("in", "userId", $userIds))
+        ->all();
+      return $result;
+    }
+
+    public function sendPushNotifications($pushNotifications, string $payload)
+    {
+      $ret = array(
+        "success" => true
+      );
+      $auth = array(
+        "VAPID" => array(
+          "subject" => "Push Notification",
+          "publicKey" => getenv("PUSH_NOTIFICATION_APPLICATION_SERVER_KEY_PUBLIC"),
+          "privateKey" => getenv("PUSH_NOTIFICATION_APPLICATION_SERVER_KEY_PRIVATE"),
+        ),
+      );
+      $webPush = new WebPush($auth);
+      $failures = array();
+      foreach($pushNotifications as $notification)
+      {
+        $flush = true;
+        $date = (new \DateTime())->format("Y-m-d h:m:s");
+        $res = $webPush->sendNotification(
+          $notification["endpoint"],
+          $payload,
+          str_replace(['_', '-'], ['/', '+'], $notification["key"]),
+          str_replace(['_', '-'], ['/', '+'], $notification["token"]),
+          $flush
+        );
+        if (gettype($res) === "array") {
+          if (isset($res["success"]) && $res["success"] === false) {
+            $failures[] = $notification["userId"];
+            if (isset($res["message"])) {
+              $params = array();
+              $includeDateUpdated = true;
+              Craft::$app->db->createCommand()->update($this->pluginTableName, ["failureMessage" => $res["message"]], "id = " . $notification["id"], $params, $includeDateUpdated)->execute();
+            }
+          }
+        } else if (gettype($res) === "boolean") {
+          if ($res === true) {
+            $params = array();
+            $includeDateUpdated = true;
+            Craft::$app->db->createCommand()->update($this->pluginTableName, ["lastSuccess" => $date, "failureMessage" => null], "id = " . $notification["id"], $params, $includeDateUpdated)->execute();
+            Craft::$app->db->createCommand()->update($this->pluginTableName, ["failureMessage" => null], "id = " . $notification["id"], $params, $includeDateUpdated)->execute();
+          }
+        }
+        $params = array();
+        $includeDateUpdated = true;
+        Craft::$app->db->createCommand()->update($this->pluginTableName, ["lastAttempt" => $date], "id = " . $notification["id"], $params, $includeDateUpdated)->execute();
+      }
+      if (count($failures) > 0) {
+        $ret["success"] = false;
+        $ret["message"] = implode(", ", $failures);
+      }
+      return $ret;
     }
 
     public function insertPushNotificationData($pushNotificationData)
@@ -80,17 +145,27 @@ class PushNotificationService extends Component
       $ret = array(
         "success" => false,
       );
-      $query = $this->insert("pushNotifications", [
-          "endpoint" => $pushNotificationData->endpoint,
-          "key" => $pushNotificationData->key,
-          "token" => $pushNotificationData->token,
-          "userId" => $pushNotificationData->userId,
+      $date = new \DateTime();
+      $updateIfExists = true;
+      $includeAuditColumns = true;
+      $params = array();
+      $query = Craft::$app->db->createCommand()
+        ->upsert($this->pluginTableName, [
+          "endpoint" => $pushNotificationData["endpoint"],
+          "key" => $pushNotificationData["key"],
+          "token" => $pushNotificationData["token"],
+          "userId" => $pushNotificationData["userId"],
           "dateCreated" => $date->format("Y-m-d h:m:s"),
           "dateUpdated" => $date->format("Y-m-d h:m:s"),
-        ])
+          "lastSuccess" => null,
+          "lastAttempt" => null,
+          "failureMessage" => null,
+        ], $updateIfExists, $params, $includeAuditColumns)
         ->execute();
         if ($query === 1) {
           $ret["success"] = true;
+        } else {
+          $ret["message"] = "Record was not inserted or updated";
         }
         return $ret;
     }

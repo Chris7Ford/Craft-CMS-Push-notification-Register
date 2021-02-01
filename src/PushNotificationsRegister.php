@@ -80,7 +80,7 @@ class PushNotificationsRegister extends Plugin
         );
 
         Event::on(UrlManager::class, UrlManager::EVENT_REGISTER_SITE_URL_RULES, function (RegisterUrlRulesEvent $event) {
-          $event->rules["/pushNotifications/register-push-notification"] = "push-notifications-register/push-notifications/register-push-notification-data";
+          $event->rules["/push-notifications/register-push-notification.json"] = "push-notifications-register/push-notifications/register-push-notification-data";
         });
 
         Craft::info(

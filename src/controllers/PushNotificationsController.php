@@ -54,8 +54,8 @@ class PushNotificationsController extends Controller
         "userId" => $params["userId"],
       );
       $currentUser = Craft::$app->getUser()->getIdentity();
-      if ($params["userId"] === $currentUser->id) {
-        $service = new PushNotificationServiceService();
+      if ($params["userId"] === $currentUser->id . "") {
+        $service = new PushNotificationService();
         $insertResult = $service->insertPushNotificationData($params);
         if ($insertResult["success"] === true) {
           $ret["success"] = true;
@@ -65,5 +65,6 @@ class PushNotificationsController extends Controller
       } else {
         $ret["message"] = "Current user id and user id param do not match";
       }
+      return $this->asJson($ret);
     }
 }

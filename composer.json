@@ -11,8 +11,8 @@
         "push notifications register"
     ],
     "support": {
-        "docs": "???",
-        "issues": "???"
+        "docs": "https://github.com/Chris7Ford/Craft-CMS-Push-notification-Register",
+        "issues": "https://github.com/Chris7Ford/Craft-CMS-Push-notification-Register/issues"
     },
     "license": "MIT",
     "authors": [
@@ -22,7 +22,8 @@
         }
     ],
     "require": {
-        "craftcms/cms": "^3.0.0"
+        "craftcms/cms": "^3.0.0",
+        "minishlink/web-push": "2.0.1"
     },
     "autoload": {
         "psr-4": {
