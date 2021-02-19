@@ -104,7 +104,7 @@ class PushNotificationService extends Component
       foreach($pushNotifications as $notification)
       {
         $flush = true;
-        $date = (new \DateTime())->format("Y-m-d h:m:s");
+        $date = (new \DateTime())->format("Y-m-d h:i:s");
         $res = $webPush->sendNotification(
           $notification["endpoint"],
           $payload,
@@ -155,8 +155,8 @@ class PushNotificationService extends Component
           "key" => $pushNotificationData["key"],
           "token" => $pushNotificationData["token"],
           "userId" => $pushNotificationData["userId"],
-          "dateCreated" => $date->format("Y-m-d h:m:s"),
-          "dateUpdated" => $date->format("Y-m-d h:m:s"),
+          "dateCreated" => $date->format("Y-m-d h:i:s"),
+          "dateUpdated" => $date->format("Y-m-d h:i:s"),
           "lastSuccess" => null,
           "lastAttempt" => null,
           "failureMessage" => null,
